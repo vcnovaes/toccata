@@ -140,6 +140,39 @@ defmodule TCC do
   end
 
   @doc """
+  Adds an asynchronous TCC action to the transaction pipeline.
+
+  Async actions are executed in parallel during the Try phase. They are awaited
+  before the next synchronous action or at the end of the Try phase before
+  proceeding to the Confirm phase.
+
+  If there is an error in an async action, TCC will await for other async
+  actions to complete and then execute the Cancel phase for all completed actions.
+
+  ## Options
+
+    * `:timeout` - Time in milliseconds to wait for the async action (default: 5000)
+    * `:retry_limit` - Retry limit for confirm/cancel phases
+
+  ## Example
+
+      TCC.new()
+      |> TCC.run(:payment, &try_payment/2, &confirm_payment/2, &cancel_payment/2)
+      |> TCC.run_async(:inventory, &try_inventory/2, &confirm_inventory/2, &cancel_inventory/2)
+      |> TCC.run_async(:shipping, &try_shipping/2, &confirm_shipping/2, &cancel_shipping/2)
+      |> TCC.run(:notification, &try_notify/2, &confirm_notify/2, &cancel_notify/2)
+      |> TCC.execute(%{})
+
+  In this example, `:inventory` and `:shipping` are executed in parallel after
+  `:payment` completes. They are awaited before `:notification` starts.
+  """
+  @spec run_async(t(), stage_name(), function(), function(), function(), keyword()) :: t()
+  def run_async(transaction, name, try_fun, confirm_fun, cancel_fun, opts \\ []) do
+    action = Action.new_async(name, try_fun, confirm_fun, cancel_fun, opts)
+    Transaction.add_action(transaction, action)
+  end
+
+  @doc """
   Executes the TCC transaction with the given parameters.
 
   The execution follows these steps:
@@ -190,6 +223,108 @@ defmodule TCC do
   @spec async_execute(t(), params()) :: Task.t()
   def async_execute(transaction, params \\ %{}) do
     Task.async(fn -> execute(transaction, params) end)
+  end
+
+  @doc """
+  Registers a tracer module for the transaction.
+
+  The tracer module must implement the `TCC.Tracer` behaviour.
+  Tracers are called before and after each phase of TCC execution.
+
+  ## Example
+
+      defmodule MyTracer do
+        @behaviour TCC.Tracer
+
+        @impl true
+        def handle_event(name, action, state) do
+          IO.puts("Action \#{name}: \#{action}")
+          state
+        end
+      end
+
+      TCC.new()
+      |> TCC.with_tracer(MyTracer)
+      |> TCC.run(:payment, &try_fn/2, &confirm_fn/2, &cancel_fn/2)
+      |> TCC.execute(%{})
+
+  """
+  @spec with_tracer(t(), module()) :: t()
+  def with_tracer(%Transaction{} = transaction, module) when is_atom(module) do
+    %{tracers: tracers} = transaction
+
+    if MapSet.member?(tracers, module) do
+      raise TCC.DuplicateTracerError, transaction: transaction, module: module
+    end
+
+    %{transaction | tracers: MapSet.put(tracers, module)}
+  end
+
+  @doc """
+  Registers an error handler for cancel phase failures.
+
+  The handler module must implement the `TCC.CancelErrorHandler` behaviour.
+  By default, critical errors during cancel phase are raised.
+
+  ## Example
+
+      TCC.new()
+      |> TCC.with_cancel_error_handler(MyCancelErrorHandler)
+      |> TCC.run(:payment, &try_fn/2, &confirm_fn/2, &cancel_fn/2)
+      |> TCC.execute(%{})
+
+  """
+  @spec with_cancel_error_handler(t(), module()) :: t()
+  def with_cancel_error_handler(%Transaction{} = transaction, module) when is_atom(module) do
+    %{transaction | on_cancel_error: module}
+  end
+
+  @doc """
+  Appends a function that will be triggered after TCC execution completes.
+
+  The final hook receives `:ok` if the transaction succeeded or `:error` if it failed,
+  along with the options passed to `execute/2`.
+
+  This is useful for job queue acknowledgment or cleanup tasks that should run
+  regardless of transaction outcome.
+
+  ## Example
+
+      def acknowledge_job(:ok, _opts), do: IO.puts("Job completed successfully")
+      def acknowledge_job(:error, _opts), do: IO.puts("Job failed")
+
+      TCC.new()
+      |> TCC.finally(&acknowledge_job/2)
+      |> TCC.run(:payment, &try_fn/2, &confirm_fn/2, &cancel_fn/2)
+      |> TCC.execute(%{})
+
+  Final hooks can also be MFA tuples:
+
+      TCC.new()
+      |> TCC.finally({MyModule, :acknowledge, [:extra_arg]})
+      |> TCC.execute(%{})
+
+  """
+  @spec finally(t(), function() | {module(), atom(), list()}) :: t()
+  def finally(%Transaction{} = transaction, hook) when is_function(hook, 2) do
+    %{final_hooks: final_hooks} = transaction
+
+    if MapSet.member?(final_hooks, hook) do
+      raise TCC.DuplicateFinalHookError, transaction: transaction, hook: hook
+    end
+
+    %{transaction | final_hooks: MapSet.put(final_hooks, hook)}
+  end
+
+  def finally(%Transaction{} = transaction, {module, function, args} = hook)
+      when is_atom(module) and is_atom(function) and is_list(args) do
+    %{final_hooks: final_hooks} = transaction
+
+    if MapSet.member?(final_hooks, hook) do
+      raise TCC.DuplicateFinalHookError, transaction: transaction, hook: hook
+    end
+
+    %{transaction | final_hooks: MapSet.put(final_hooks, hook)}
   end
 
   @doc """
