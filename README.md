@@ -11,7 +11,7 @@ A complete implementation of the **TCC (Try-Confirm-Cancel)** protocol for distr
 **Status**: ✅ Production Ready (v0.1.0)
 
 #### Features
-- Three-phase transaction protocol (Try-Confirm-Cancel)
+- Try-Confirm-Cancel pattern implementation for Distributed Transactions
 - Automatic rollback on failures
 - Retry logic with exponential backoff
 - Telemetry integration for monitoring
