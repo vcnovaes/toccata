@@ -1,0 +1,1 @@
+{application,benchee_html,[{modules,['Elixir.Benchee.Formatters.HTML','Elixir.Benchee.Formatters.HTML.Render']},{optional_applications,[]},{applications,[kernel,stdlib,elixir,benchee,benchee_json]},{description,"benchee_html"},{registered,[]},{vsn,"1.0.1"}]}.

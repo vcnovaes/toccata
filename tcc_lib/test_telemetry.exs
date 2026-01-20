@@ -22,30 +22,35 @@ IO.puts("""
   fn event, measurements, metadata, _config ->
     event_name = event |> Enum.join(".") |> String.upcase()
 
-    duration_str = case Map.get(measurements, :duration) do
-      nil -> ""
-      d -> " | duração: #{System.convert_time_unit(d, :native, :millisecond)}ms"
-    end
+    duration_str =
+      case Map.get(measurements, :duration) do
+        nil -> ""
+        d -> " | duração: #{System.convert_time_unit(d, :native, :millisecond)}ms"
+      end
 
-    status_str = case Map.get(metadata, :status) do
-      nil -> ""
-      s -> " | status: #{s}"
-    end
+    status_str =
+      case Map.get(metadata, :status) do
+        nil -> ""
+        s -> " | status: #{s}"
+      end
 
-    action_str = case Map.get(metadata, :action) do
-      nil -> ""
-      a -> " | action: #{a}"
-    end
+    action_str =
+      case Map.get(metadata, :action) do
+        nil -> ""
+        a -> " | action: #{a}"
+      end
 
-    phase_str = case Map.get(metadata, :phase) do
-      nil -> ""
-      p -> " | phase: #{p}"
-    end
+    phase_str =
+      case Map.get(metadata, :phase) do
+        nil -> ""
+        p -> " | phase: #{p}"
+      end
 
-    tx_id_str = case Map.get(metadata, :transaction_id) do
-      nil -> ""
-      id -> " | tx_id: #{String.slice(id, 0, 12)}..."
-    end
+    tx_id_str =
+      case Map.get(metadata, :transaction_id) do
+        nil -> ""
+        id -> " | tx_id: #{String.slice(id, 0, 12)}..."
+      end
 
     IO.puts("📊 #{event_name}#{tx_id_str}#{action_str}#{phase_str}#{status_str}#{duration_str}")
   end,
@@ -55,7 +60,8 @@ IO.puts("""
 # Definir funções de exemplo
 try_fn = fn effects, params ->
   IO.puts("   → Executando TRY...")
-  Process.sleep(100) # Simula latência
+  # Simula latência
+  Process.sleep(100)
   {:ok, Map.put(effects, :tried, true), params}
 end
 
@@ -90,6 +96,7 @@ case result do
   {:ok, effects, _params} ->
     IO.puts("\n✅ Transação concluída com SUCESSO!")
     IO.puts("   Effects: #{inspect(effects)}")
+
   {:error, stage, reason, _effects} ->
     IO.puts("\n❌ Transação FALHOU no estágio #{stage}: #{inspect(reason)}")
 end
@@ -120,6 +127,7 @@ case result2 do
   {:ok, effects, _params} ->
     IO.puts("\n✅ Transação concluída com SUCESSO!")
     IO.puts("   Effects: #{inspect(effects)}")
+
   {:error, stage, reason, effects} ->
     IO.puts("\n❌ Transação FALHOU no estágio :#{stage}")
     IO.puts("   Razão: #{inspect(reason)}")

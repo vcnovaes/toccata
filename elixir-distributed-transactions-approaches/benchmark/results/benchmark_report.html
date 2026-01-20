@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCC vs Saga Benchmark Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #00d4ff;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+        .summary {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .summary h2 {
+            color: #00d4ff;
+            margin-bottom: 1rem;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .metric-card {
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        .metric-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+        .scenario {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .scenario h3 {
+            color: #ff6b6b;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,107,107,0.3);
+            padding-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: right;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        th {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+        th:first-child, td:first-child {
+            text-align: left;
+        }
+        .positive {
+            color: #4ecdc4;
+        }
+        .negative {
+            color: #ff6b6b;
+        }
+        .neutral {
+            color: #ffd93d;
+        }
+        .comparison {
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TCC vs Saga Benchmark Report</h1>
+        <p class="subtitle">Generated: 2025-12-18 23:17:58 | Iterations: 500</p>
+        
+        <div class="summary">
+            <h2>Executive Summary</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value">500</div>
+                    <div class="metric-label">Iterations per test</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">3</div>
+                    <div class="metric-label">Scenarios tested</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">2</div>
+                    <div class="metric-label">Patterns compared</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="scenario">
+            <h3>Simple 2-step transaction</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Sage (Saga)</th>
+                        <th>TCC</th>
+                        <th>Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Throughput</td>
+                        <td>249.13/s</td>
+                        <td>249.50/s</td>
+                        <td><span class="neutral">(+0.1%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Avg Latency</td>
+                        <td>4.001ms</td>
+                        <td>3.995ms</td>
+                        <td><span class="neutral">(-0.1%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>P50 Latency</td>
+                        <td>3.998ms</td>
+                        <td>3.994ms</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>P95 Latency</td>
+                        <td>4.067ms</td>
+                        <td>4.054ms</td>
+                        <td><span class="neutral">(-0.3%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>P99 Latency</td>
+                        <td>4.164ms</td>
+                        <td>4.109ms</td>
+                        <td><span class="positive">(-1.3%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Min Latency</td>
+                        <td>3.648ms</td>
+                        <td>3.648ms</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Max Latency</td>
+                        <td>9.874ms</td>
+                        <td>7.914ms</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="scenario">
+            <h3>Medium 4-step transaction</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Sage (Saga)</th>
+                        <th>TCC</th>
+                        <th>Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Throughput</td>
+                        <td>125.00/s</td>
+                        <td>124.41/s</td>
+                        <td><span class="neutral">(-0.5%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Avg Latency</td>
+                        <td>7.983ms</td>
+                        <td>8.023ms</td>
+                        <td><span class="neutral">(+0.5%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>P50 Latency</td>
+                        <td>7.995ms</td>
+                        <td>7.994ms</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>P95 Latency</td>
+                        <td>8.073ms</td>
+                        <td>8.111ms</td>
+                        <td><span class="neutral">(+0.5%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>P99 Latency</td>
+                        <td>8.144ms</td>
+                        <td>9.866ms</td>
+                        <td><span class="negative">(+21.1%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Min Latency</td>
+                        <td>7.357ms</td>
+                        <td>7.307ms</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Max Latency</td>
+                        <td>8.302ms</td>
+                        <td>16.630ms</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="scenario">
+            <h3>Complex 5-step transaction</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Sage (Saga)</th>
+                        <th>TCC</th>
+                        <th>Difference</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Throughput</td>
+                        <td>97.30/s</td>
+                        <td>99.38/s</td>
+                        <td><span class="negative">(+2.1%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Avg Latency</td>
+                        <td>10.259ms</td>
+                        <td>10.049ms</td>
+                        <td><span class="positive">(-2.0%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>P50 Latency</td>
+                        <td>9.997ms</td>
+                        <td>9.997ms</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>P95 Latency</td>
+                        <td>10.085ms</td>
+                        <td>10.087ms</td>
+                        <td><span class="neutral">(+0.0%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>P99 Latency</td>
+                        <td>11.008ms</td>
+                        <td>10.159ms</td>
+                        <td><span class="positive">(-7.7%)</span></td>
+                    </tr>
+                    <tr>
+                        <td>Min Latency</td>
+                        <td>9.254ms</td>
+                        <td>9.606ms</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>Max Latency</td>
+                        <td>140.290ms</td>
+                        <td>39.354ms</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary">
+            <h2>Key Findings</h2>
+            <ul style="margin-left: 2rem; line-height: 1.8;">
+                <li><strong>Performance Parity:</strong> Both TCC and Saga patterns show similar performance characteristics in terms of throughput and latency.</li>
+                <li><strong>Consistency:</strong> TCC provides stronger consistency guarantees through its Try-Confirm-Cancel approach.</li>
+                <li><strong>Overhead:</strong> The additional Confirm phase in TCC adds minimal overhead compared to Saga's compensating transactions.</li>
+                <li><strong>Use Case Fit:</strong> TCC is better suited for short-lived transactions requiring resource reservation, while Saga excels in long-running workflows.</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Generated by TCC vs Saga Benchmark Suite</p>
+        </div>
+    </div>
+</body>
+</html>

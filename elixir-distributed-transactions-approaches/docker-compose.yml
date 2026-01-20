@@ -1,0 +1,184 @@
+version: "3.8"
+
+services:
+  # Microservices
+  payment:
+    build:
+      context: ./services/payment
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+    networks:
+      - saga-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  inventory:
+    build:
+      context: ./services/inventory
+      dockerfile: Dockerfile
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+    networks:
+      - saga-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  shipping:
+    build:
+      context: ./services/shipping
+      dockerfile: Dockerfile
+    ports:
+      - "4003:4003"
+    environment:
+      - PORT=4003
+    networks:
+      - saga-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  hotel:
+    build:
+      context: ./services/hotel
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4004"
+    environment:
+      - PORT=4004
+    networks:
+      - saga-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  flight:
+    build:
+      context: ./services/flight
+      dockerfile: Dockerfile
+    ports:
+      - "4005:4005"
+    environment:
+      - PORT=4005
+    networks:
+      - saga-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4005/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Toxiproxy for chaos engineering
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.7.0
+    ports:
+      - "8474:8474"   # Toxiproxy API
+      - "14001:14001" # Payment proxy
+      - "14002:14002" # Inventory proxy
+      - "14003:14003" # Shipping proxy
+      - "14004:14004" # Hotel proxy
+      - "14005:14005" # Flight proxy
+    networks:
+      - saga-network
+    volumes:
+      - ./toxiproxy.json:/config/toxiproxy.json
+    command: ["-config", "/config/toxiproxy.json"]
+
+  # Prometheus for metrics
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - saga-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    networks:
+      - saga-network
+    depends_on:
+      - prometheus
+
+  # Benchmark orchestrator
+  benchmark:
+    build:
+      context: ./benchmark
+      dockerfile: Dockerfile
+    environment:
+      - PAYMENT_URL=http://payment:4001
+      - INVENTORY_URL=http://inventory:4002
+      - SHIPPING_URL=http://shipping:4003
+      - HOTEL_URL=http://hotel:4004
+      - FLIGHT_URL=http://flight:4005
+      - TOXIPROXY_URL=http://toxiproxy:8474
+      # Proxied URLs (through Toxiproxy)
+      - PAYMENT_PROXY_URL=http://toxiproxy:14001
+      - INVENTORY_PROXY_URL=http://toxiproxy:14002
+      - SHIPPING_PROXY_URL=http://toxiproxy:14003
+      - HOTEL_PROXY_URL=http://toxiproxy:14004
+      - FLIGHT_PROXY_URL=http://toxiproxy:14005
+    volumes:
+      - ./results:/app/results
+    networks:
+      - saga-network
+    depends_on:
+      payment:
+        condition: service_healthy
+      inventory:
+        condition: service_healthy
+      shipping:
+        condition: service_healthy
+      hotel:
+        condition: service_healthy
+      flight:
+        condition: service_healthy
+      toxiproxy:
+        condition: service_started
+    profiles:
+      - benchmark
+
+networks:
+  saga-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
+

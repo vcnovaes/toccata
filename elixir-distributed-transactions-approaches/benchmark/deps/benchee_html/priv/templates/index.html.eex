@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <%= head(inline_assets) %>
+  <body>
+
+    <div class="header">
+      <h1>benchee report index</h1>
+      <%= version_note() %>
+    </div>
+
+    <%= render_system_info(system, visible: true) %>
+
+    <article>
+      <%= for {input_name, paths} <- names_to_paths do %>
+        <section>
+          <%= input_label(input_name) %>
+          <ul>
+            <%= for path <- paths do %>
+              <li><a href="<%= path %>"> <%= path %> </a></li>
+            <% end %>
+          </ul>
+        </section>
+
+      <% end %>
+
+    </article>
+
+    <footer>
+      <%= render_footer() %>
+    </footer>
+
+    <%= js_includes(inline_assets) %>
+  </body>
+</html>

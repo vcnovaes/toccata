@@ -43,16 +43,16 @@ TCC.new()
 
 ### Key Differences
 
-| Aspect | Saga | TCC |
-|--------|------|-----|
-| **Phases** | 2 (Forward + Compensation) | 3 (Try + Confirm/Cancel) |
-| **Resource Locking** | No (eventual consistency) | Yes (Try phase reserves) |
-| **Commit Point** | Each step commits immediately | All commit together (Confirm) |
-| **Isolation** | Low (dirty reads possible) | High (resources reserved) |
-| **Complexity** | Lower | Higher |
-| **Use Case** | Long-running workflows | Short-lived transactions |
-| **Consistency** | Eventual | Strong (within reservation window) |
-| **Rollback** | Compensating actions | Release reservations |
+| Aspect               | Saga                          | TCC                                |
+| -------------------- | ----------------------------- | ---------------------------------- |
+| **Phases**           | 2 (Forward + Compensation)    | 3 (Try + Confirm/Cancel)           |
+| **Resource Locking** | No (eventual consistency)     | Yes (Try phase reserves)           |
+| **Commit Point**     | Each step commits immediately | All commit together (Confirm)      |
+| **Isolation**        | Low (dirty reads possible)    | High (resources reserved)          |
+| **Complexity**       | Lower                         | Higher                             |
+| **Use Case**         | Long-running workflows        | Short-lived transactions           |
+| **Consistency**      | Eventual                      | Strong (within reservation window) |
+| **Rollback**         | Compensating actions          | Release reservations               |
 
 ### When to Use Each
 
@@ -125,16 +125,16 @@ Traditional distributed transaction protocol with a coordinator and participants
 
 ### Comparison Table
 
-| Aspect | 2PC | TCC |
-|--------|-----|-----|
-| **Blocking** | Yes | No |
-| **Database Support** | Required | Not required |
-| **Performance** | Poor in distributed systems | Better |
-| **Flexibility** | Limited | High |
-| **Complexity** | Protocol-level | Application-level |
-| **Failure Recovery** | Coordinator-dependent | Self-contained |
-| **Network Sensitivity** | High | Lower |
-| **Use in Microservices** | Not recommended | Good fit |
+| Aspect                   | 2PC                         | TCC               |
+| ------------------------ | --------------------------- | ----------------- |
+| **Blocking**             | Yes                         | No                |
+| **Database Support**     | Required                    | Not required      |
+| **Performance**          | Poor in distributed systems | Better            |
+| **Flexibility**          | Limited                     | High              |
+| **Complexity**           | Protocol-level              | Application-level |
+| **Failure Recovery**     | Coordinator-dependent       | Self-contained    |
+| **Network Sensitivity**  | High                        | Lower             |
+| **Use in Microservices** | Not recommended             | Good fit          |
 
 ## TCC vs Event Sourcing
 
@@ -171,15 +171,15 @@ Store state changes as a sequence of events; derive current state by replaying e
 
 ### Comparison
 
-| Aspect | Event Sourcing | TCC |
-|--------|----------------|-----|
-| **Primary Goal** | Audit trail & state reconstruction | Transaction coordination |
-| **State Management** | Event stream | Current state |
-| **Complexity** | High (event store, projections) | Medium (reservation logic) |
-| **Audit Trail** | Complete, immutable | Optional |
-| **Time Travel** | Yes (replay events) | No |
-| **Consistency** | Eventual | Strong (during transaction) |
-| **Use Case** | Systems needing full history | Systems needing coordination |
+| Aspect               | Event Sourcing                     | TCC                          |
+| -------------------- | ---------------------------------- | ---------------------------- |
+| **Primary Goal**     | Audit trail & state reconstruction | Transaction coordination     |
+| **State Management** | Event stream                       | Current state                |
+| **Complexity**       | High (event store, projections)    | Medium (reservation logic)   |
+| **Audit Trail**      | Complete, immutable                | Optional                     |
+| **Time Travel**      | Yes (replay events)                | No                           |
+| **Consistency**      | Eventual                           | Strong (during transaction)  |
+| **Use Case**         | Systems needing full history       | Systems needing coordination |
 
 **Note:** Event Sourcing and TCC can be combined! Use TCC for transaction coordination and emit events for audit trail.
 
@@ -247,25 +247,57 @@ TCC.new()
 |> TCC.execute(params)
 ```
 
+**Async Execution Example:**
+
+When actions are independent, they can be executed in parallel using `run_async/6`:
+
+```elixir
+# Sequential: payment first, then inventory and shipping in parallel
+TCC.new()
+|> TCC.run(:payment, &try_payment/2, &confirm_payment/2, &cancel_payment/2)
+|> TCC.run_async(:inventory, &try_inventory/2, &confirm_inventory/2, &cancel_inventory/2)
+|> TCC.run_async(:shipping, &try_shipping/2, &confirm_shipping/2, &cancel_shipping/2)
+|> TCC.run(:notification, &try_notify/2, &confirm_notify/2, &cancel_notify/2)
+|> TCC.execute(params)
+```
+
+**Async Flow:**
+```
+Try Phase:
+  payment (sync) ────────────────────────┐
+                                         │
+  inventory (async) ──┬── runs in ───────┤
+  shipping (async)  ──┘   parallel       │
+                                         │
+  notification (sync) ───────────────────┘ (waits for async to complete)
+
+Confirm Phase:
+  payment → inventory → shipping → notification (sequential)
+
+Cancel Phase (if any Try fails):
+  notification → shipping → inventory → payment (reverse order)
+```
+
 **Architecture:**
 - Embedded library (no separate server)
 - Local transaction coordination
 - Explicit function calls
 - Manual transaction composition
+- Support for parallel execution of independent actions
 
 ### Feature Comparison
 
-| Feature | Apache Seata | This Library |
-|---------|--------------|--------------|
-| **Language** | Java | Elixir |
-| **Deployment** | Requires Seata server | Library only |
-| **API Style** | Annotations | Functions |
-| **Global TX Management** | Automatic | Manual |
-| **Cross-Service** | Yes | Within service |
-| **Learning Curve** | Steep | Moderate |
-| **Operational Complexity** | High | Low |
-| **Flexibility** | Less | More |
-| **Best For** | Large microservices | Single service coordination |
+| Feature                    | Apache Seata          | This Library                |
+| -------------------------- | --------------------- | --------------------------- |
+| **Language**               | Java                  | Elixir                      |
+| **Deployment**             | Requires Seata server | Library only                |
+| **API Style**              | Annotations           | Functions                   |
+| **Global TX Management**   | Automatic             | Manual                      |
+| **Cross-Service**          | Yes                   | Within service              |
+| **Learning Curve**         | Steep                 | Moderate                    |
+| **Operational Complexity** | High                  | Low                         |
+| **Flexibility**            | Less                  | More                        |
+| **Best For**               | Large microservices   | Single service coordination |
 
 ## Choosing the Right Pattern
 
@@ -300,25 +332,36 @@ Resources can be reserved?
 
 ### Pattern Selection Guide
 
-| Scenario | Recommended Pattern | Why |
-|----------|-------------------|-----|
-| Bank transfer | **TCC** | Strong consistency, short-lived |
-| E-commerce order | **TCC** or **Saga** | TCC if immediate, Saga if workflow |
-| User registration | **Saga** | Long-running, eventual consistency OK |
-| Hotel booking | **TCC** | Need to hold reservation |
-| Document approval | **Saga** | Long-running workflow |
-| Payment processing | **TCC** | Strong consistency required |
-| Inventory management | **TCC** | Resource reservation critical |
-| Email campaign | **Saga** | Long-running, asynchronous |
+| Scenario             | Recommended Pattern | Why                                   |
+| -------------------- | ------------------- | ------------------------------------- |
+| Bank transfer        | **TCC**             | Strong consistency, short-lived       |
+| E-commerce order     | **TCC** or **Saga** | TCC if immediate, Saga if workflow    |
+| User registration    | **Saga**            | Long-running, eventual consistency OK |
+| Hotel booking        | **TCC**             | Need to hold reservation              |
+| Document approval    | **Saga**            | Long-running workflow                 |
+| Payment processing   | **TCC**             | Strong consistency required           |
+| Inventory management | **TCC**             | Resource reservation critical         |
+| Email campaign       | **Saga**            | Long-running, asynchronous            |
 
 ## Performance Comparison
 
 ### Latency
 
-**TCC (this library):**
+**TCC (this library) - Sequential:**
 - Try phase: n × operation_time
 - Confirm phase: n × operation_time
 - Total: ~2n × operation_time (if all succeed)
+
+**TCC (this library) - With Async Actions:**
+- Try phase: max(parallel_operations) + sequential_operations
+- Confirm phase: n × operation_time
+- Total: Significantly reduced when actions are independent
+
+Example with 4 actions (1 sync + 2 async + 1 sync):
+```
+Sequential: 4 × 100ms = 400ms (Try) + 400ms (Confirm) = 800ms
+With Async: 100ms + max(100ms, 100ms) + 100ms = 300ms (Try) + 400ms (Confirm) = 700ms
+```
 
 **Saga:**
 - Forward phase: n × operation_time

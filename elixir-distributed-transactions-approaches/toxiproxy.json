@@ -1,0 +1,33 @@
+[
+  {
+    "name": "payment",
+    "listen": "0.0.0.0:14001",
+    "upstream": "payment:4001",
+    "enabled": true
+  },
+  {
+    "name": "inventory",
+    "listen": "0.0.0.0:14002",
+    "upstream": "inventory:4002",
+    "enabled": true
+  },
+  {
+    "name": "shipping",
+    "listen": "0.0.0.0:14003",
+    "upstream": "shipping:4003",
+    "enabled": true
+  },
+  {
+    "name": "hotel",
+    "listen": "0.0.0.0:14004",
+    "upstream": "hotel:4004",
+    "enabled": true
+  },
+  {
+    "name": "flight",
+    "listen": "0.0.0.0:14005",
+    "upstream": "flight:4005",
+    "enabled": true
+  }
+]
+
