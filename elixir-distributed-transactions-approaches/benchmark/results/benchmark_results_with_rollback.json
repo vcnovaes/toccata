@@ -1,0 +1,150 @@
+{
+  "timestamp": "2026-01-20T19:20:03.648571Z",
+  "scenarios": [
+    {
+      "name": "simple_transaction",
+      "description": "Simple 2-step transaction (success)",
+      "sage": {
+        "throughput": 248.76,
+        "p50_ms": 3.998,
+        "p95_ms": 4.054,
+        "p99_ms": 5.674,
+        "min_ms": 3.891,
+        "max_ms": 5.674,
+        "avg_ms": 4.009,
+        "total_time_ms": 402
+      },
+      "tcc": {
+        "throughput": 248.14,
+        "p50_ms": 3.997,
+        "p95_ms": 4.053,
+        "p99_ms": 6.344,
+        "min_ms": 3.832,
+        "max_ms": 6.344,
+        "avg_ms": 4.016,
+        "total_time_ms": 403
+      }
+    },
+    {
+      "name": "medium_transaction",
+      "description": "Medium 4-step transaction (success)",
+      "sage": {
+        "throughput": 121.95,
+        "p50_ms": 7.999,
+        "p95_ms": 8.026,
+        "p99_ms": 16.207,
+        "min_ms": 7.745,
+        "max_ms": 16.207,
+        "avg_ms": 8.186,
+        "total_time_ms": 820
+      },
+      "tcc": {
+        "throughput": 125.0,
+        "p50_ms": 7.998,
+        "p95_ms": 8.041,
+        "p99_ms": 8.323,
+        "min_ms": 7.531,
+        "max_ms": 8.323,
+        "avg_ms": 7.985,
+        "total_time_ms": 800
+      }
+    },
+    {
+      "name": "complex_transaction",
+      "description": "Complex 5-step transaction (success)",
+      "sage": {
+        "throughput": 100.0,
+        "p50_ms": 9.996,
+        "p95_ms": 10.036,
+        "p99_ms": 10.069,
+        "min_ms": 9.721,
+        "max_ms": 10.069,
+        "avg_ms": 9.981,
+        "total_time_ms": 1000
+      },
+      "tcc": {
+        "throughput": 99.8,
+        "p50_ms": 9.994,
+        "p95_ms": 10.118,
+        "p99_ms": 11.102,
+        "min_ms": 9.759,
+        "max_ms": 11.102,
+        "avg_ms": 10.003,
+        "total_time_ms": 1002
+      }
+    },
+    {
+      "name": "failure_early",
+      "description": "5-step with failure at step 2 (1 rollback)",
+      "sage": {
+        "throughput": 164.74,
+        "p50_ms": 5.999,
+        "p95_ms": 6.072,
+        "p99_ms": 13.551,
+        "min_ms": 5.45,
+        "max_ms": 13.551,
+        "avg_ms": 6.053,
+        "total_time_ms": 607
+      },
+      "tcc": {
+        "throughput": 250.0,
+        "p50_ms": 3.998,
+        "p95_ms": 4.084,
+        "p99_ms": 4.318,
+        "min_ms": 3.656,
+        "max_ms": 4.318,
+        "avg_ms": 3.987,
+        "total_time_ms": 400
+      }
+    },
+    {
+      "name": "failure_middle",
+      "description": "5-step with failure at step 3 (2 rollbacks)",
+      "sage": {
+        "throughput": 100.0,
+        "p50_ms": 9.998,
+        "p95_ms": 10.066,
+        "p99_ms": 10.113,
+        "min_ms": 9.092,
+        "max_ms": 10.113,
+        "avg_ms": 9.975,
+        "total_time_ms": 1000
+      },
+      "tcc": {
+        "throughput": 125.0,
+        "p50_ms": 7.998,
+        "p95_ms": 8.081,
+        "p99_ms": 8.273,
+        "min_ms": 7.581,
+        "max_ms": 8.273,
+        "avg_ms": 7.99,
+        "total_time_ms": 800
+      }
+    },
+    {
+      "name": "failure_late",
+      "description": "5-step with failure at step 5 (4 rollbacks)",
+      "sage": {
+        "throughput": 55.49,
+        "p50_ms": 17.995,
+        "p95_ms": 18.083,
+        "p99_ms": 19.042,
+        "min_ms": 17.479,
+        "max_ms": 19.042,
+        "avg_ms": 17.998,
+        "total_time_ms": 1802
+      },
+      "tcc": {
+        "throughput": 62.23,
+        "p50_ms": 15.997,
+        "p95_ms": 16.976,
+        "p99_ms": 17.995,
+        "min_ms": 15.273,
+        "max_ms": 17.995,
+        "avg_ms": 16.054,
+        "total_time_ms": 1607
+      }
+    }
+  ],
+  "iterations": 100
+}

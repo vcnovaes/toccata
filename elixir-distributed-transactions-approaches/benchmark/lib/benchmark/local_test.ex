@@ -23,9 +23,14 @@ defmodule Benchmark.LocalTest do
 
     # Run scenarios
     scenarios = [
-      {:simple_transaction, "Simple 2-step transaction"},
-      {:medium_transaction, "Medium 4-step transaction"},
-      {:complex_transaction, "Complex 5-step transaction"}
+      # Success scenarios
+      {:simple_transaction, "Simple 2-step transaction (success)"},
+      {:medium_transaction, "Medium 4-step transaction (success)"},
+      {:complex_transaction, "Complex 5-step transaction (success)"},
+      # Failure/Rollback scenarios
+      {:failure_early, "5-step with failure at step 2 (1 rollback)"},
+      {:failure_middle, "5-step with failure at step 3 (2 rollbacks)"},
+      {:failure_late, "5-step with failure at step 5 (4 rollbacks)"}
     ]
 
     scenario_results =
@@ -91,14 +96,22 @@ defmodule Benchmark.LocalTest do
 
     _result =
       Sage.new()
-      |> Sage.run(:step1, fn _effects, _opts ->
-        simulate_work(1)
-        {:ok, :step1_done}
-      end, fn _effect, _effects, _opts -> :ok end)
-      |> Sage.run(:step2, fn _effects, _opts ->
-        simulate_work(1)
-        {:ok, :step2_done}
-      end, fn _effect, _effects, _opts -> :ok end)
+      |> Sage.run(
+        :step1,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :step1_done}
+        end,
+        fn _effect, _effects, _opts -> :ok end
+      )
+      |> Sage.run(
+        :step2,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :step2_done}
+        end,
+        fn _effect, _effects, _opts -> :ok end
+      )
       |> Sage.execute()
 
     (System.monotonic_time(:microsecond) - start) / 1000
@@ -109,10 +122,38 @@ defmodule Benchmark.LocalTest do
 
     _result =
       Sage.new()
-      |> Sage.run(:step1, fn _effects, _opts -> simulate_work(1); {:ok, :s1} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step2, fn _effects, _opts -> simulate_work(1); {:ok, :s2} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step3, fn _effects, _opts -> simulate_work(1); {:ok, :s3} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step4, fn _effects, _opts -> simulate_work(1); {:ok, :s4} end, fn _, _, _ -> :ok end)
+      |> Sage.run(
+        :step1,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s1}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step2,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s2}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step3,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s3}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step4,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s4}
+        end,
+        fn _, _, _ -> :ok end
+      )
       |> Sage.execute()
 
     (System.monotonic_time(:microsecond) - start) / 1000
@@ -123,14 +164,197 @@ defmodule Benchmark.LocalTest do
 
     _result =
       Sage.new()
-      |> Sage.run(:step1, fn _effects, _opts -> simulate_work(1); {:ok, :s1} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step2, fn _effects, _opts -> simulate_work(1); {:ok, :s2} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step3, fn _effects, _opts -> simulate_work(1); {:ok, :s3} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step4, fn _effects, _opts -> simulate_work(1); {:ok, :s4} end, fn _, _, _ -> :ok end)
-      |> Sage.run(:step5, fn _effects, _opts -> simulate_work(1); {:ok, :s5} end, fn _, _, _ -> :ok end)
+      |> Sage.run(
+        :step1,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s1}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step2,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s2}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step3,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s3}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step4,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s4}
+        end,
+        fn _, _, _ -> :ok end
+      )
+      |> Sage.run(
+        :step5,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s5}
+        end,
+        fn _, _, _ -> :ok end
+      )
       |> Sage.execute()
 
     (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  # Failure scenarios for Sage - compensation runs for completed steps
+  defp run_sage_transaction(:failure_early) do
+    start = System.monotonic_time(:microsecond)
+
+    _result =
+      Sage.new()
+      |> Sage.run(
+        :step1,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s1}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step2,
+        fn _effects, _opts -> {:error, :simulated_failure} end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step3,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s3}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step4,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s4}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step5,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s5}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.execute()
+
+    (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  defp run_sage_transaction(:failure_middle) do
+    start = System.monotonic_time(:microsecond)
+
+    _result =
+      Sage.new()
+      |> Sage.run(
+        :step1,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s1}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step2,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s2}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step3,
+        fn _effects, _opts -> {:error, :simulated_failure} end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step4,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s4}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step5,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s5}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.execute()
+
+    (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  defp run_sage_transaction(:failure_late) do
+    start = System.monotonic_time(:microsecond)
+
+    _result =
+      Sage.new()
+      |> Sage.run(
+        :step1,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s1}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step2,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s2}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step3,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s3}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step4,
+        fn _effects, _opts ->
+          simulate_work(1)
+          {:ok, :s4}
+        end,
+        &sage_compensate/3
+      )
+      |> Sage.run(
+        :step5,
+        fn _effects, _opts -> {:error, :simulated_failure} end,
+        &sage_compensate/3
+      )
+      |> Sage.execute()
+
+    (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  # Sage compensation function - simulates work during rollback
+  defp sage_compensate(_effect, _effects, _opts) do
+    simulate_work(1)
+    :ok
   end
 
   defp run_tcc_transaction(:simple_transaction) do
@@ -138,14 +362,24 @@ defmodule Benchmark.LocalTest do
 
     _result =
       TCC.new()
-      |> TCC.run(:step1,
-        fn effects, params -> simulate_work(1); {:ok, effects, params} end,
+      |> TCC.run(
+        :step1,
+        fn effects, params ->
+          simulate_work(1)
+          {:ok, effects, params}
+        end,
         fn effects, params -> {:ok, effects, params} end,
-        fn effects, params -> {:ok, effects, params} end)
-      |> TCC.run(:step2,
-        fn effects, params -> simulate_work(1); {:ok, effects, params} end,
+        fn effects, params -> {:ok, effects, params} end
+      )
+      |> TCC.run(
+        :step2,
+        fn effects, params ->
+          simulate_work(1)
+          {:ok, effects, params}
+        end,
         fn effects, params -> {:ok, effects, params} end,
-        fn effects, params -> {:ok, effects, params} end)
+        fn effects, params -> {:ok, effects, params} end
+      )
       |> TCC.execute(%{})
 
     (System.monotonic_time(:microsecond) - start) / 1000
@@ -180,9 +414,69 @@ defmodule Benchmark.LocalTest do
     (System.monotonic_time(:microsecond) - start) / 1000
   end
 
-  defp try_fn(effects, params), do: (simulate_work(1); {:ok, effects, params})
+  # Failure scenarios for TCC - cancel runs for completed Try phases
+  defp run_tcc_transaction(:failure_early) do
+    start = System.monotonic_time(:microsecond)
+
+    _result =
+      TCC.new()
+      |> TCC.run(:step1, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step2, &try_fail_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step3, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step4, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step5, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.execute(%{})
+
+    (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  defp run_tcc_transaction(:failure_middle) do
+    start = System.monotonic_time(:microsecond)
+
+    _result =
+      TCC.new()
+      |> TCC.run(:step1, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step2, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step3, &try_fail_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step4, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step5, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.execute(%{})
+
+    (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  defp run_tcc_transaction(:failure_late) do
+    start = System.monotonic_time(:microsecond)
+
+    _result =
+      TCC.new()
+      |> TCC.run(:step1, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step2, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step3, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step4, &try_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.run(:step5, &try_fail_fn/2, &confirm_fn/2, &cancel_fn_with_work/2)
+      |> TCC.execute(%{})
+
+    (System.monotonic_time(:microsecond) - start) / 1000
+  end
+
+  defp try_fn(effects, params),
+    do:
+      (
+        simulate_work(1)
+        {:ok, effects, params}
+      )
+
+  defp try_fail_fn(_effects, _params), do: {:error, :simulated_failure}
   defp confirm_fn(effects, params), do: {:ok, effects, params}
   defp cancel_fn(effects, params), do: {:ok, effects, params}
+
+  defp cancel_fn_with_work(effects, params),
+    do:
+      (
+        simulate_work(1)
+        {:ok, effects, params}
+      )
 
   defp simulate_work(ms) do
     # Simulate some CPU work
@@ -216,7 +510,11 @@ defmodule Benchmark.LocalTest do
       IO.puts(String.duplicate("-", 50))
       IO.puts("")
       IO.puts("                    Sage          TCC")
-      IO.puts("  Throughput:    #{pad(scenario.sage.throughput)}/s    #{pad(scenario.tcc.throughput)}/s")
+
+      IO.puts(
+        "  Throughput:    #{pad(scenario.sage.throughput)}/s    #{pad(scenario.tcc.throughput)}/s"
+      )
+
       IO.puts("  Avg Latency:   #{pad(scenario.sage.avg_ms)}ms    #{pad(scenario.tcc.avg_ms)}ms")
       IO.puts("  P50 Latency:   #{pad(scenario.sage.p50_ms)}ms    #{pad(scenario.tcc.p50_ms)}ms")
       IO.puts("  P95 Latency:   #{pad(scenario.sage.p95_ms)}ms    #{pad(scenario.tcc.p95_ms)}ms")

@@ -34,7 +34,7 @@ defmodule Benchmark.MixProject do
       # Saga library
       {:sage, "~> 0.6"},
       # TCC library (local path)
-      {:tcc, path: "../../toccata/tcc_lib"}
+      {:tcc, path: "../../tcc_lib"}
     ]
   end
 
