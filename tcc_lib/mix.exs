@@ -2,7 +2,7 @@ defmodule Toccata.MixProject do
   use Mix.Project
 
   @version "0.1.0"
-  @source_url "https://github.com/viniciusmuller/toccata"
+  @source_url "https://github.com/vcnovaes/toccata"
 
   def project do
     [
