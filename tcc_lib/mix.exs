@@ -1,16 +1,21 @@
-defmodule TCC.MixProject do
+defmodule Toccata.MixProject do
   use Mix.Project
+
+  @version "0.1.0"
+  @source_url "https://github.com/viniciusmuller/toccata"
 
   def project do
     [
-      app: :tcc,
-      version: "0.1.0",
+      app: :toccata,
+      version: @version,
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: description(),
       package: package(),
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      source_url: @source_url,
+      homepage_url: @source_url
     ]
   end
 
@@ -29,22 +34,31 @@ defmodule TCC.MixProject do
 
   defp description do
     """
-    TCC (Try-Confirm-Cancel) protocol implementation for distributed transactions in Elixir.
-    Inspired by Apache Seata's TCC mode and designed with a similar API to the Sage library.
+    Toccata: A TCC (Try-Confirm-Cancel) protocol implementation for distributed
+    transactions in Elixir. Inspired by Apache Seata's TCC mode and designed
+    with a similar API to the Sage library.
     """
   end
 
   defp package do
     [
+      name: "toccata",
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/yourusername/tcc"}
+      links: %{
+        "GitHub" => @source_url,
+        "Changelog" => "#{@source_url}/blob/main/CHANGELOG.md"
+      },
+      files: ~w(lib .formatter.exs mix.exs README.md LICENSE CHANGELOG.md)
     ]
   end
 
   defp docs do
     [
-      main: "TCC",
-      extras: ["README.md"]
+      main: "readme",
+      name: "Toccata",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extras: ["README.md", "CHANGELOG.md"]
     ]
   end
 end

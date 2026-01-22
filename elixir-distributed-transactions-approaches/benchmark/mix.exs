@@ -33,8 +33,8 @@ defmodule Benchmark.MixProject do
       {:statistex, "~> 1.0"},
       # Saga library
       {:sage, "~> 0.6"},
-      # TCC library (local path)
-      {:tcc, path: "../../tcc_lib"}
+      # Toccata TCC library (local path)
+      {:toccata, path: "../../tcc_lib"}
     ]
   end
 

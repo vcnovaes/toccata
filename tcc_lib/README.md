@@ -1,4 +1,7 @@
-# TCC - Try-Confirm-Cancel Protocol for Elixir
+# Toccata - Try-Confirm-Cancel Protocol for Elixir
+
+[![Hex.pm](https://img.shields.io/hexpm/v/toccata.svg)](https://hex.pm/packages/toccata)
+[![Documentation](https://img.shields.io/badge/docs-hexdocs-blue.svg)](https://hexdocs.pm/toccata)
 
 A robust implementation of the TCC (Try-Confirm-Cancel) distributed transaction protocol for Elixir, inspired by Apache Seata's TCC mode and designed with a similar API to the Sage library.
 
@@ -38,12 +41,12 @@ The protocol consists of three phases:
 
 ## Installation
 
-Add `tcc` to your list of dependencies in `mix.exs`:
+Add `toccata` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:tcc, "~> 0.1.0"}
+    {:toccata, "~> 0.1.0"}
   ]
 end
 ```
